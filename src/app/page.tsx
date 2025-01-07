@@ -1,239 +1,184 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, useEffect } from 'react';
-import Image from 'next/image';
+import { useState, FormEvent, useEffect } from 'react';
+import { useGenerationStore } from '@/store/generationStore';
 import styles from './page.module.css';
 
-interface ImageDimensions {
-	width: number;
-	height: number;
-}
-
 export default function Home() {
-	const [selectedImage, setSelectedImage] = useState<string | null>(null);
-	const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
-	const [newWidth, setNewWidth] = useState<string>('');
-	const [newHeight, setNewHeight] = useState<string>('');
-	const [isUploading, setIsUploading] = useState(false);
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [imageId, setImageId] = useState<string | null>(null);
-	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
-	const [accessToken, setAccessToken] = useState<string | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [image, setImage] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [blobUrl, setBlobUrl] = useState<string | null>(null);
+	const [width, setWidth] = useState('');
+	const [height, setHeight] = useState('');
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
+	const { results, originalDimensions, setOriginalDimensions, resetResults, setResult } = useGenerationStore();
+
+	// Auto-fill dimensions when original dimensions change
 	useEffect(() => {
-		const fetchAccessToken = async () => {
-			try {
-				const response = await fetch('/api/auth');
-				const data = await response.json();
-				if (data.access_token) {
-					setAccessToken(data.access_token);
-				} else {
-					throw new Error('No access token received');
+		if (originalDimensions) {
+			setWidth((originalDimensions.width + 200).toString());
+			setHeight((originalDimensions.height + 200).toString());
+		}
+	}, [originalDimensions]);
+
+	// Cleanup blob URL when component unmounts
+	useEffect(() => {
+		return () => {
+			if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			}
+		};
+	}, [blobUrl]);
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			setImage(file);
+			// Create blob URL for the image
+			const newBlobUrl = URL.createObjectURL(file);
+			if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			}
+			setBlobUrl(newBlobUrl);
+
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setImagePreview(reader.result as string);
+				// Get original dimensions
+				const img = new Image();
+				img.onload = () => {
+					setOriginalDimensions({
+						width: img.width,
+						height: img.height,
+					});
+				};
+				img.src = reader.result as string;
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+
+	const handleSubmit = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!image || !width || !height || !blobUrl) {
+			setError('Please fill in all fields');
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		resetResults();
+
+		const services = ['firefly', 'picsArt', 'photAI', 'youCam', 'xDesign'];
+
+		try {
+			// Start all service requests in parallel
+			const promises = services.map(async service => {
+				const formData = new FormData();
+				formData.append('image', image);
+				formData.append('width', width);
+				formData.append('height', height);
+
+				const response = await fetch(`/api/services/${service}${service === 'firefly' ? '/generate' : ''}`, {
+					method: 'POST',
+					body: formData,
+				});
+
+				if (!response.ok) {
+					throw new Error(`Failed to process image with ${service}`);
 				}
-			} catch (error) {
-				console.error('Error fetching access token:', error);
-				alert('Failed to initialize. Please try refreshing the page.');
-			}
-		};
 
-		fetchAccessToken();
-	}, []);
-
-	const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (!file || !accessToken) return;
-
-		if (file.size > 15 * 1024 * 1024) {
-			alert('File size should not exceed 15MB');
-			return;
-		}
-
-		// Reset states
-		setGeneratedImageUrl(null);
-		setImageId(null);
-		setNewWidth('');
-		setNewHeight('');
-
-		const imageUrl = URL.createObjectURL(file as Blob);
-		const img = new window.Image();
-		img.onload = () => {
-			setImageDimensions({
-				width: img.width,
-				height: img.height,
-			});
-		};
-		img.src = imageUrl;
-		setSelectedImage(imageUrl);
-
-		try {
-			setIsUploading(true);
-			const formData = new FormData();
-			formData.append('file', file);
-
-			const response = await fetch('/api/upload', {
-				method: 'POST',
-				headers: {
-					'x-access-token': accessToken,
-				},
-				body: formData,
+				// Update store with the result
+				setResult(service, blobUrl);
 			});
 
-			const data = await response.json();
-			if (!response.ok) {
-				throw new Error(data.error || 'Upload failed');
-			}
-			if (data.images?.[0]?.id) {
-				setImageId(data.images[0].id);
-			} else {
-				throw new Error('No image ID received');
-			}
-		} catch (error) {
-			console.error('Upload failed:', error);
-			alert('Failed to upload image. Please try again.');
-			setSelectedImage(null);
-			setImageDimensions(null);
+			// Wait for all services to complete
+			await Promise.all(promises);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'An error occurred');
 		} finally {
-			setIsUploading(false);
+			setLoading(false);
 		}
 	};
-
-	const handleGenerate = async () => {
-		if (!newWidth || !newHeight || !imageId || !accessToken) return;
-
-		const widthNum = parseInt(newWidth);
-		const heightNum = parseInt(newHeight);
-
-		if (isNaN(widthNum) || isNaN(heightNum) || widthNum <= 0 || heightNum <= 0) {
-			alert('Please enter valid dimensions');
-			return;
-		}
-
-		if (widthNum === imageDimensions?.width && heightNum === imageDimensions?.height) {
-			alert('New dimensions must be different from original dimensions');
-			return;
-		}
-
-		try {
-			setIsGenerating(true);
-			const response = await fetch('/api/generate', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-access-token': accessToken,
-				},
-				body: JSON.stringify({
-					imageId,
-					width: widthNum,
-					height: heightNum,
-				}),
-			});
-
-			const data = await response.json();
-			if (!response.ok) {
-				throw new Error(data.error || 'Generation failed');
-			}
-			if (data.image?.source?.url) {
-				setGeneratedImageUrl(data.image.source.url);
-			} else {
-				throw new Error('No generated image URL received');
-			}
-		} catch (error) {
-			console.error('Generation failed:', error);
-			alert('Failed to generate expanded image. Please try again.');
-		} finally {
-			setIsGenerating(false);
-		}
-	};
-
-	const canGenerate =
-		selectedImage && newWidth && newHeight && !isUploading && !isGenerating && imageDimensions !== null;
 
 	return (
 		<main className={styles.main}>
+			<h1>Image Extension Comparison</h1>
+
 			<div className={styles.container}>
-				<h1 className={styles.title}>Adobe Firefly Image Expander</h1>
-
-				{selectedImage && imageDimensions && (
-					<div className={styles.imageInfo}>
-						<div className={styles.imageWrapper}>
-							<Image
-								src={selectedImage}
-								alt="Preview"
-								width={300}
-								height={300}
-								style={{
-									objectFit: 'contain',
-									width: '100%',
-									height: 'auto',
-								}}
-							/>
+				<div className={styles.inputSection}>
+					<form onSubmit={handleSubmit} className={styles.form}>
+						<div>
+							<label htmlFor="image">Upload Image:</label>
+							<input type="file" id="image" accept="image/*" onChange={handleImageChange} required />
 						</div>
-						<p>
-							Original Dimensions: {imageDimensions.width}px × {imageDimensions.height}px
-						</p>
-					</div>
-				)}
 
-				{accessToken && (
-					<div className={styles.uploadSection}>
-						<input
-							type="file"
-							accept="image/*"
-							onChange={handleFileSelect}
-							ref={fileInputRef}
-							style={{ display: 'none' }}
-						/>
-						<button
-							onClick={() => fileInputRef.current?.click()}
-							disabled={isUploading || !accessToken}
-							className={styles.uploadButton}
-						>
-							{isUploading ? 'Uploading...' : 'Upload Image'}
+						{imagePreview && (
+							<div className={styles.preview}>
+								<h3>Input Image:</h3>
+								<img src={imagePreview} alt="Preview" />
+								{originalDimensions && (
+									<p className={styles.dimensions}>
+										Original Dimensions: {originalDimensions.width}px × {originalDimensions.height}
+										px
+									</p>
+								)}
+							</div>
+						)}
+
+						<div className={styles.dimensions}>
+							<div>
+								<label htmlFor="width">New Width:</label>
+								<input
+									type="number"
+									id="width"
+									value={width}
+									onChange={e => setWidth(e.target.value)}
+									required
+								/>
+							</div>
+
+							<div>
+								<label htmlFor="height">New Height:</label>
+								<input
+									type="number"
+									id="height"
+									value={height}
+									onChange={e => setHeight(e.target.value)}
+									required
+								/>
+							</div>
+						</div>
+
+						<button type="submit" disabled={loading}>
+							{loading ? 'Processing...' : 'Generate Extensions'}
 						</button>
-					</div>
-				)}
+					</form>
 
-				{selectedImage && (
-					<div className={styles.dimensionsInput}>
-						<input
-							type="number"
-							placeholder="Width"
-							value={newWidth}
-							onChange={e => setNewWidth(e.target.value)}
-							min="1"
-						/>
-						<input
-							type="number"
-							placeholder="Height"
-							value={newHeight}
-							onChange={e => setNewHeight(e.target.value)}
-							min="1"
-						/>
-					</div>
-				)}
+					{error && <div className={styles.error}>{error}</div>}
+				</div>
 
-				{selectedImage && (
-					<button onClick={handleGenerate} disabled={!canGenerate} className={styles.generateButton}>
-						{isGenerating ? 'Generating...' : 'Generate'}
-					</button>
-				)}
-
-				{generatedImageUrl && (
-					<div className={styles.generatedImage}>
-						<h2>Generated Image</h2>
-						<div className={styles.imageWrapper}>
-							<Image
-								src={generatedImageUrl}
-								alt="Generated"
-								width={800}
-								height={800}
-								style={{
-									objectFit: 'contain',
-									width: '100%',
-									height: 'auto',
-								}}
-							/>
+				{Object.keys(results).length > 0 && (
+					<div className={styles.results}>
+						<h2>Results</h2>
+						<div className={styles.grid}>
+							{Object.entries(results).map(([service, result]) => (
+								<div key={service} className={styles.resultCard}>
+									<div className={styles.serviceHeader}>
+										<h3>{service.replace('_', ' ').toUpperCase()}</h3>
+										<span className={styles.timestamp}>
+											Generated in {((Date.now() - result.generatedAt) / 1000).toFixed(1)}s
+										</span>
+									</div>
+									<img
+										src={result.imageUrl}
+										alt={`${service} result`}
+										className={styles.resultImage}
+									/>
+								</div>
+							))}
 						</div>
 					</div>
 				)}
