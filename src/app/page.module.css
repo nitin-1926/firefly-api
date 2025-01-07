@@ -1,155 +1,272 @@
 .main {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 2rem;
 	min-height: 100vh;
-	background-color: #f5f5f5;
+	background: #f8fafc;
+	padding: 2rem;
+}
+
+.main h1 {
+	font-size: 1.75rem;
+	font-weight: 600;
+	color: #1e293b;
+	text-align: center;
+	margin-bottom: 2rem;
+	letter-spacing: -0.025em;
 }
 
 .container {
-	max-width: 800px;
-	width: 100%;
+	max-width: 1400px;
+	margin: 0 auto;
 	display: flex;
 	flex-direction: column;
 	gap: 2rem;
-	align-items: center;
+}
+
+.inputSection {
+	max-width: 600px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	padding: 1.5rem;
 	background-color: white;
-	padding: 2rem;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	border-radius: 0.75rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e2e8f0;
 }
 
-.title {
-	font-size: 2rem;
-	font-weight: 600;
-	color: #333;
-	margin-bottom: 1rem;
-	text-align: center;
-}
-
-.imageInfo {
+.preview {
+	width: 100%;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 1rem;
-	width: 100%;
-}
-
-.imageWrapper {
-	position: relative;
-	width: 100%;
-	max-width: 300px;
-	border-radius: 8px;
-	overflow: hidden;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.uploadSection {
-	width: 100%;
-	display: flex;
-	justify-content: center;
-}
-
-.uploadButton {
-	padding: 0.75rem 1.5rem;
-	background-color: #0070f3;
-	color: white;
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-	font-size: 1rem;
-	transition: all 0.2s ease;
-}
-
-.uploadButton:hover {
-	background-color: #0051cc;
-	transform: translateY(-1px);
-}
-
-.uploadButton:disabled {
-	background-color: #ccc;
-	cursor: not-allowed;
-	transform: none;
-}
-
-.dimensionsInput {
-	display: flex;
-	gap: 1rem;
-	width: 100%;
-	max-width: 300px;
-	justify-content: center;
-}
-
-.dimensionsInput input {
+	gap: 0.75rem;
 	padding: 0.75rem;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	width: 120px;
-	font-size: 1rem;
-	transition: border-color 0.2s;
+	background: #f8fafc;
+	border-radius: 0.5rem;
+	border: 1px solid #e2e8f0;
 }
 
-.dimensionsInput input:focus {
-	outline: none;
-	border-color: #0070f3;
+.preview h3 {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #64748b;
 }
 
-.generateButton {
-	padding: 0.75rem 1.5rem;
-	background-color: #28a745;
-	color: white;
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-	font-size: 1rem;
-	transition: all 0.2s ease;
-	min-width: 120px;
-}
-
-.generateButton:hover {
-	background-color: #218838;
-	transform: translateY(-1px);
-}
-
-.generateButton:disabled {
-	background-color: #ccc;
-	cursor: not-allowed;
-	transform: none;
-}
-
-.generatedImage {
+.preview img {
 	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+	height: auto;
+	max-height: 300px;
+	object-fit: contain;
+	border-radius: 0.375rem;
+	background: white;
+	border: 1px solid #e2e8f0;
+	padding: 0.5rem;
+}
+
+.preview p.dimensions {
+	margin: 0;
+	color: #64748b;
+	font-size: 0.75rem;
+	text-align: center;
+	background: white;
+	padding: 0.5rem;
+	border-radius: 0.375rem;
+	border: 1px solid #e2e8f0;
+	font-family: monospace;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.dimensions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 	gap: 1rem;
 }
 
-.generatedImage h2 {
-	font-size: 1.5rem;
-	color: #333;
+.dimensions div {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
 }
 
-@media (max-width: 600px) {
+.form label {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #475569;
+}
+
+.form input {
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.375rem;
+	font-size: 0.875rem;
+	transition: all 0.2s;
+	color: #1e293b;
+	background: white;
+}
+
+.form input:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form input:-webkit-autofill,
+.form input:-webkit-autofill:hover,
+.form input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0px 1000px white inset;
+	-webkit-text-fill-color: #1e293b;
+	transition: background-color 5000s ease-in-out 0s;
+}
+
+.form input[type='file'] {
+	padding: 0.375rem;
+	background: #f8fafc;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+
+.form button {
+	padding: 0.75rem;
+	background-color: #3b82f6;
+	color: white;
+	border: none;
+	border-radius: 0.375rem;
+	cursor: pointer;
+	font-weight: 500;
+	font-size: 0.875rem;
+	transition: all 0.2s ease;
+	margin-top: 0.5rem;
+}
+
+.form button:hover {
+	background-color: #2563eb;
+}
+
+.form button:disabled {
+	background-color: #94a3b8;
+	cursor: not-allowed;
+}
+
+.error {
+	color: #dc2626;
+	padding: 0.75rem;
+	border: 1px solid #fecaca;
+	border-radius: 0.375rem;
+	background-color: #fee2e2;
+	margin-top: 1rem;
+	font-size: 0.875rem;
+}
+
+.results {
+	width: 100%;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.results h2 {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #1e293b;
+	text-align: center;
+	margin-bottom: 1.5rem;
+	letter-spacing: -0.025em;
+}
+
+.grid {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	padding: 0.5rem;
+}
+
+.resultCard {
+	background: white;
+	border-radius: 0.75rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e2e8f0;
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+	width: 100%;
+}
+
+.resultCard:hover {
+	transform: translateY(-2px);
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.1),
+		0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.serviceHeader {
+	padding: 0.75rem 1rem;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.serviceHeader h3 {
+	margin: 0;
+	color: #1e293b;
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+.timestamp {
+	font-size: 0.75rem;
+	color: #64748b;
+	font-weight: 500;
+	font-family: monospace;
+}
+
+.resultImage {
+	width: 100%;
+	height: auto;
+	display: block;
+	padding: 1rem;
+	background: white;
+	max-height: 800px;
+	object-fit: contain;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
 	.main {
 		padding: 1rem;
 	}
 
-	.container {
+	.grid {
+		grid-template-columns: 1fr;
+	}
+
+	.form {
 		padding: 1rem;
 	}
 
-	.title {
-		font-size: 1.5rem;
+	.preview img {
+		max-height: 250px;
 	}
+}
 
-	.dimensionsInput {
-		flex-direction: column;
-		align-items: center;
+/* Loading state animation */
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
 	}
+	50% {
+		opacity: 0.5;
+	}
+}
 
-	.dimensionsInput input {
-		width: 100%;
-	}
+.form button:disabled {
+	animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
