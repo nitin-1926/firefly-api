@@ -71,7 +71,9 @@ export default function Home() {
 		setError(null);
 		resetResults();
 
-		const services = ['firefly', 'picsArt', 'photAI', 'youCam', 'xDesign'];
+		// const services = ['firefly', 'picsArt', 'photAI', 'youCam', 'xDesign'];
+		// const doneServices = ['picsArt', 'clipDrop'];
+		const services = ['clipDrop'];
 
 		try {
 			// Start all service requests in parallel
@@ -80,6 +82,8 @@ export default function Home() {
 				formData.append('image', image);
 				formData.append('width', width);
 				formData.append('height', height);
+				formData.append('originalWidth', originalDimensions?.width.toString() ?? '0');
+				formData.append('originalHeight', originalDimensions?.height.toString() ?? '0');
 
 				const response = await fetch(`/api/services/${service}${service === 'firefly' ? '/generate' : ''}`, {
 					method: 'POST',
@@ -90,8 +94,20 @@ export default function Home() {
 					throw new Error(`Failed to process image with ${service}`);
 				}
 
-				// Update store with the result
-				setResult(service, blobUrl);
+				// Handle both JSON and binary responses
+				const contentType = response.headers.get('content-type');
+				let data;
+				if (contentType?.includes('application/json')) {
+					data = await response.json();
+					console.log('Response for service ', service, 'is ', data);
+					setResult(service, data.imageUrl ?? blobUrl);
+				} else {
+					// Handle binary response
+					const blob = await response.blob();
+					const imageUrl = URL.createObjectURL(blob);
+					console.log('Binary response for service ', service);
+					setResult(service, imageUrl);
+				}
 			});
 
 			// Wait for all services to complete
