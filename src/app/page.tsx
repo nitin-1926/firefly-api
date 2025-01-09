@@ -72,12 +72,13 @@ export default function Home() {
 		resetResults();
 
 		// const services = ['firefly', 'photAI', 'youCam', 'xDesign'];
-		const services = ['picsArt', 'clipDrop', 'youCam'];
-		// const services = ['youCam'];
+		const services = ['picsArt', 'clipDrop', 'youCam', 'photAI'];
+		// const services = ['photAI'];
 
 		try {
 			// Start all service requests in parallel
 			const promises = services.map(async service => {
+				const requestStart = Date.now();
 				const formData = new FormData();
 				formData.append('image', image);
 				formData.append('width', width);
@@ -90,8 +91,12 @@ export default function Home() {
 					body: formData,
 				});
 
+				const requestEnd = Date.now();
+				const requestTime = (requestEnd - requestStart) / 1000;
+				console.log(`Request time for ${service}: ${requestTime} seconds`);
+
 				if (!response.ok) {
-					setResult(service, blobUrl);
+					setResult(service, blobUrl, requestTime);
 					throw new Error(`Failed to process image with ${service}`);
 				}
 
@@ -101,13 +106,13 @@ export default function Home() {
 				if (contentType?.includes('application/json')) {
 					data = await response.json();
 					console.log('Response for service ', service, 'is ', data);
-					setResult(service, data.imageUrl ?? blobUrl);
+					setResult(service, data.imageUrl ?? blobUrl, requestTime);
 				} else {
 					// Handle binary response
 					const blob = await response.blob();
 					const imageUrl = URL.createObjectURL(blob);
 					console.log('Binary response for service ', service);
-					setResult(service, imageUrl);
+					setResult(service, imageUrl, requestTime);
 				}
 			});
 
@@ -186,7 +191,7 @@ export default function Home() {
 									<div className={styles.serviceHeader}>
 										<h3>{service.replace('_', ' ').toUpperCase()}</h3>
 										<span className={styles.timestamp}>
-											Generated in {((Date.now() - result.generatedAt) / 1000).toFixed(1)}s
+											Generated in {result.requestTime.toFixed(1)}s
 										</span>
 									</div>
 									<img
