@@ -72,7 +72,7 @@ export default function Home() {
 		resetResults();
 
 		// const services = ['firefly', 'photAI', 'youCam', 'xDesign'];
-		const services = ['picsArt', 'clipDrop', 'youCam', 'photAI'];
+		const services = ['picsArt', 'clipDrop', 'photAI'];
 		// const services = ['photAI'];
 
 		try {
