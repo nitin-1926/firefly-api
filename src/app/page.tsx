@@ -71,9 +71,9 @@ export default function Home() {
 		setError(null);
 		resetResults();
 
-		// const services = ['firefly', 'picsArt', 'photAI', 'youCam', 'xDesign'];
-		// const doneServices = ['picsArt', 'clipDrop'];
-		const services = ['clipDrop'];
+		// const services = ['firefly', 'photAI', 'youCam', 'xDesign'];
+		const services = ['picsArt', 'clipDrop', 'youCam'];
+		// const services = ['youCam'];
 
 		try {
 			// Start all service requests in parallel
@@ -91,6 +91,7 @@ export default function Home() {
 				});
 
 				if (!response.ok) {
+					setResult(service, blobUrl);
 					throw new Error(`Failed to process image with ${service}`);
 				}
 
