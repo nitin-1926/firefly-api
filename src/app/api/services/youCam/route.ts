@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
 			throw new Error('Polling timeout: Maximum attempts reached');
 		};
 
-		// Step 1: Get access token
+		// Execute steps sequentially
 		console.log('Step 1: Getting access token...');
 		const accessToken = await getAccessToken();
 		if (!accessToken) {
@@ -141,22 +141,18 @@ export async function POST(request: NextRequest) {
 		}
 		console.log('Access token obtained successfully');
 
-		// // Step 2: Initialize file upload
-		// console.log('Step 2: Initiating file upload...');
-		// const { fileId, uploadUrl } = await initiateFileUpload(accessToken);
-		// if (!fileId || !uploadUrl) {
-		// 	throw new Error('Failed to initialize file upload');
-		// }
-		// console.log('File upload initialized successfully');
+		console.log('Step 2: Initiating file upload...');
+		const { fileId, uploadUrl } = await initiateFileUpload(accessToken);
+		if (!fileId || !uploadUrl) {
+			throw new Error('Failed to initialize file upload');
+		}
+		console.log('File upload initialized successfully');
 
-		// // Step 3: Upload the image
-		// console.log('Step 3: Uploading image...');
-		// await uploadImage(uploadUrl, image);
-		// console.log('Image uploaded successfully');
+		console.log('Step 3: Uploading image...');
+		await uploadImage(uploadUrl, image);
+		console.log('Image uploaded successfully');
 
-		// Step 4: Create task for processing
-		const fileId = 'PoycEWhdMjPCMyOlW+M57RPCydsigocANaXstfzlS7MLbKfeLEmuXUa9yH4wuc2K';
-		console.log('Step 4: Creating processing task...: ', fileId);
+		console.log('Step 4: Creating processing task...');
 		const taskResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/out-paint', {
 			method: 'POST',
 			headers: {
@@ -167,7 +163,7 @@ export async function POST(request: NextRequest) {
 				request_id: 0,
 				payload: {
 					file_sets: {
-						src_ids: [fileId],
+						src_ids: [fileId], // Use the fileId from step 2
 					},
 					actions: [
 						{
@@ -198,7 +194,6 @@ export async function POST(request: NextRequest) {
 		}
 		console.log('Task created successfully');
 
-		// Step 5: Poll for results
 		console.log('Step 5: Polling for results...');
 		const imageUrl = await pollTaskStatus(accessToken, result.task_id);
 		console.log('Processing completed successfully');
