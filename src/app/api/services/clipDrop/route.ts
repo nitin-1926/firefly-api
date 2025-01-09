@@ -11,10 +11,10 @@ export async function POST(request: NextRequest) {
 
 		const form = new FormData();
 		form.append('image_file', image);
-		form.append('extend_right', ((+width - +originalWidth) / 2).toString());
-		form.append('extend_left', ((+width - +originalWidth) / 2).toString());
-		form.append('extend_up', ((+height - +originalHeight) / 2).toString());
-		form.append('extend_down', ((+height - +originalHeight) / 2).toString());
+		form.append('extend_right', ((Number(width) - Number(originalWidth)) / 2).toString());
+		form.append('extend_left', ((Number(width) - Number(originalWidth)) / 2).toString());
+		form.append('extend_up', ((Number(height) - Number(originalHeight)) / 2).toString());
+		form.append('extend_down', ((Number(height) - Number(originalHeight)) / 2).toString());
 
 		const response = await fetch('https://clipdrop-api.co/uncrop/v1', {
 			method: 'POST',
