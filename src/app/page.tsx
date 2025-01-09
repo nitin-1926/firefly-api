@@ -111,7 +111,7 @@ export default function Home() {
 					// Handle binary response
 					const blob = await response.blob();
 					const imageUrl = URL.createObjectURL(blob);
-					console.log('Binary response for service ', service);
+					console.log('Binary response for service ', service, imageUrl);
 					setResult(service, imageUrl, requestTime);
 				}
 			});
@@ -122,6 +122,47 @@ export default function Home() {
 			setError(err instanceof Error ? err.message : 'An error occurred');
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleRegenerateService = async (service: string) => {
+		if (!image || !width || !height || !blobUrl) {
+			setError('Missing required data for regeneration');
+			return;
+		}
+
+		try {
+			const requestStart = Date.now();
+			const formData = new FormData();
+			formData.append('image', image);
+			formData.append('width', width);
+			formData.append('height', height);
+			formData.append('originalWidth', originalDimensions?.width.toString() ?? '0');
+			formData.append('originalHeight', originalDimensions?.height.toString() ?? '0');
+
+			const response = await fetch(`/api/services/${service}${service === 'firefly' ? '/generate' : ''}`, {
+				method: 'POST',
+				body: formData,
+			});
+
+			const requestEnd = Date.now();
+			const requestTime = (requestEnd - requestStart) / 1000;
+
+			if (!response.ok) {
+				throw new Error(`Failed to regenerate with ${service}`);
+			}
+
+			const contentType = response.headers.get('content-type');
+			if (contentType?.includes('application/json')) {
+				const data = await response.json();
+				setResult(service, data.imageUrl ?? blobUrl, requestTime);
+			} else {
+				const blob = await response.blob();
+				const imageUrl = URL.createObjectURL(blob);
+				setResult(service, imageUrl, requestTime);
+			}
+		} catch (err) {
+			setError(err instanceof Error ? err.message : `Failed to regenerate with ${service}`);
 		}
 	};
 
@@ -190,9 +231,17 @@ export default function Home() {
 								<div key={service} className={styles.resultCard}>
 									<div className={styles.serviceHeader}>
 										<h3>{service.replace('_', ' ').toUpperCase()}</h3>
-										<span className={styles.timestamp}>
-											Generated in {result.requestTime.toFixed(1)}s
-										</span>
+										<div className={styles.serviceControls}>
+											<button
+												onClick={() => handleRegenerateService(service)}
+												className={styles.regenerateButton}
+											>
+												Regenerate
+											</button>
+											<span className={styles.timestamp}>
+												Generated in {result.requestTime.toFixed(1)}s
+											</span>
+										</div>
 									</div>
 									<img
 										src={result.imageUrl}
